@@ -2,6 +2,8 @@
 
 The Nightfury cycles site of **Master Aadhithyavarman** — *Start anywhere. Stop nowhere.*
 
+**Live:** https://aadhicycle.onrender.com
+
 - **Night Patrol** hero: the Night Fury flying over the master (Night / Day Stormcutter-hybrid / Rain), click to fire.
 - **Chapter 04 — The Master**, **05 — The Defense** (scripted battle), **06 — Defend the Nightfury** (mini-game with the Cycling Squad of Unity).
 - Plasma + roar sound effects, synthesised in the browser (no audio files).
