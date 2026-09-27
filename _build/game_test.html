@@ -1,0 +1,21 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#0e1117;padding:16px;font-family:sans-serif}</style></head>
+<body><div id="s"></div>
+<!-- test harness: ?mode=ready|play|roar -->
+<script>window.onerror=(m,src,l,c)=>{document.title="ERR "+m+" @"+l+":"+c;};</script>
+<script src="game.js?v=4"></script>
+<script>
+  const root = document.getElementById("s");
+  nfGameMount(root, false);
+  const mode = new URLSearchParams(location.search).get("mode") || "ready";
+  document.fonts.ready.then(() => { try {
+    const g = root.__nfg;
+    if (mode === "ready") { g.draw(); return; }
+    Math.random = (() => { let s = 42; return () => (s = (s * 16807) % 2147483647) / 2147483647; })();
+    g.start(); g.step(mode === "squad" ? 12 : 34, true); g.step(mode === "squad" ? .5 : 3.2, false);
+    if (mode === "roar") { g.fill(); g.roar(); g.step(0.33, false); }
+    if (mode === "squad") { g.squad(); g.step(parseFloat(new URLSearchParams(location.search).get("at") || "2"), false); }
+    document.title = "OK " + JSON.stringify(g.squadState ? g.squadState() : {});
+  } catch (e) { document.title = "ERR " + e.message + " " + (e.stack || "").split(String.fromCharCode(10))[1]; } });
+</script></body></html>

@@ -1,0 +1,20 @@
+# Render Blueprint — free static site. The site is prebuilt into public/
+# (run `python _build/patch.py` after changing anything in _build/).
+services:
+  - type: web
+    name: nightfury
+    runtime: static
+    buildCommand: echo "prebuilt static site in public/"
+    staticPublishPath: ./public
+    pullRequestPreviewsEnabled: false
+    headers:
+      - path: /index.html
+        name: Cache-Control
+        value: no-cache
+      - path: /static/*
+        name: Cache-Control
+        value: public, max-age=3600
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

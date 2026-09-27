@@ -1,0 +1,14 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#07080b;padding:16px;font-family:sans-serif}</style></head>
+<body><div id="s"></div>
+<!-- test harness: freezes the Defense scene at ?t=<seconds> (autoplay disabled) -->
+<script>window.IntersectionObserver = undefined; window.onerror=(m,src,l,c)=>{document.title="ERR "+m+" @"+l+":"+c;};</script>
+<script src="defense_scene.js?v=9"></script>
+<script>
+  const root = document.getElementById("s");
+  nfDefenseMount(root, false);
+  const t = parseFloat(new URLSearchParams(location.search).get("t") || "0");
+  try { root.__nfdRender(t); document.title = "OK t=" + t; } catch (e) { document.title = "ERR " + e.message; }
+  document.fonts.ready.then(() => root.__nfdRender(t));
+</script></body></html>

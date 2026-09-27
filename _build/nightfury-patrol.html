@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nightfury Night Patrol</title>
+<style>
+  :root{
+    --bg:#08090b; --card:#0f1215; --line:#1c2126;
+    --green:#1ef58f; --cyan:#19e3f2; --purple:#a45cff; --red:#ff4d5e;
+    --white:#e8ecef; --dim:#5b6570; --mono:ui-monospace,"JetBrains Mono",Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--white);font-family:var(--mono);
+       min-height:100vh;display:grid;place-items:center;padding:24px 16px}
+  .card{width:100%;max-width:900px;background:var(--card);border:1px solid var(--line);
+        border-radius:18px;padding:22px 24px 18px;position:relative;overflow:hidden}
+  .top,.bottom{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;
+        font-size:11px;letter-spacing:.2em;color:var(--dim);text-transform:uppercase}
+  .spd{display:inline-flex;align-items:center;gap:10px;border:1px solid var(--line);
+       border-radius:999px;padding:7px 14px;letter-spacing:.2em;color:var(--dim)}
+  .spd b{color:var(--green);font-weight:600;letter-spacing:.08em;font-variant-numeric:tabular-nums}
+  .spd i{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green)}
+  svg{display:block;width:100%;height:auto;margin:10px 0 6px;cursor:crosshair;touch-action:manipulation}
+  .hint{font-size:11px;letter-spacing:.22em;color:var(--dim)}
+  .hint em{color:var(--purple);font-style:normal}
+  @media (max-width:560px){.top,.bottom{font-size:10px;letter-spacing:.16em}.hint{display:none}}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="top">
+    <span>FIG. 01 — The Night Patrol</span>
+    <span class="spd"><i></i>SPD <b id="spd">01.00</b> KM/H</span>
+  </div>
+
+  <svg id="scene" class="nfp-root" viewBox="0 0 800 600" role="img"
+       aria-label="A Night Fury dragon flying over its rider, who cruises a single-speed bike one-handed along a night road">
+    <defs>
+      <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur stdDeviation="2.4" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <filter id="bigglow" x="-100%" y="-100%" width="300%" height="300%">
+        <feGaussianBlur stdDeviation="7" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <radialGradient id="moon" cx="50%" cy="50%" r="50%">
+        <stop offset="0" stop-color="#e8ecef" stop-opacity=".95"/>
+        <stop offset=".55" stop-color="#e8ecef" stop-opacity=".12"/>
+        <stop offset="1" stop-color="#e8ecef" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="cone" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#1ef58f" stop-opacity=".22"/>
+        <stop offset="1" stop-color="#1ef58f" stop-opacity="0"/>
+      </linearGradient>
+      <radialGradient id="plasma" cx="50%" cy="50%" r="50%">
+        <stop offset="0" stop-color="#ffffff"/>
+        <stop offset=".35" stop-color="#c9a6ff"/>
+        <stop offset="1" stop-color="#a45cff" stop-opacity="0"/>
+      </radialGradient>
+      <radialGradient id="fire" cx="50%" cy="50%" r="50%">
+        <stop offset="0" stop-color="#ffffff"/>
+        <stop offset=".35" stop-color="#ffd36b"/>
+        <stop offset="1" stop-color="#ff6b2c" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="daysky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#2a78bd"/>
+        <stop offset=".55" stop-color="#79bfe6"/>
+        <stop offset="1" stop-color="#ffc98a"/>
+      </linearGradient>
+      <radialGradient id="sunglow" cx="50%" cy="50%" r="50%">
+        <stop offset="0" stop-color="#fff3c4" stop-opacity=".95"/>
+        <stop offset=".45" stop-color="#ffc24a" stop-opacity=".35"/>
+        <stop offset="1" stop-color="#ffb020" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <style>
+      .nfp-root{--a:#19e3f2;--b:#a45cff}
+      .nfp-root.day{--a:#ffb020;--b:#ff6b2c}
+      .nfp-root .sa{stroke:var(--a);transition:stroke .9s}
+      .nfp-root .sb{stroke:var(--b);transition:stroke .9s}
+      .nfp-root .fa{fill:var(--a);transition:fill .9s}
+      .nfp-root .day-only{opacity:0;transition:opacity 1s}
+      .nfp-root.day .day-only{opacity:1}
+      .nfp-root .night-only{opacity:1;transition:opacity 1s}
+      .nfp-root.day .night-only{opacity:0}
+      .nfp-root .rain-only{opacity:0;transition:opacity .8s}
+      .nfp-root.rain .rain-only{opacity:1}
+      .nfp-root .sky-dim{opacity:0;transition:opacity .8s}
+      .nfp-root.rain .sky-dim{opacity:.3}
+      .nfp-root.day.rain .sky-dim{opacity:.55}
+      .nfp-root.day.rain .sun{opacity:.3}
+      .nfp-root .skyline{opacity:.55;transition:opacity 1s}
+      .nfp-root.day .skyline{opacity:.9}
+      .nfp-root .bld{fill:#12171c;stroke:#1c2329;transition:fill 1s,stroke 1s}
+      .nfp-root.day .bld{fill:#394859;stroke:#4b5d71}
+      .nfp-root .road{fill:#0b0d10;transition:fill 1s}
+      .nfp-root.day .road{fill:#22262d}
+      .nfp-root.rain .road{fill:#101820}
+      .nfp-root.day .rider{filter:drop-shadow(0 0 1.6px rgba(0,0,0,.95))}
+    </style>
+
+    <!-- sky -->
+    <rect class="day-only" x="0" y="0" width="800" height="500" fill="url(#daysky)"/>
+    <g id="stars" class="night-only"></g>
+    <g class="night-only">
+      <circle cx="690" cy="84" r="70" fill="url(#moon)"/>
+      <circle cx="690" cy="84" r="24" fill="#dfe5ea" opacity=".9"/>
+      <circle cx="681" cy="78" r="4" fill="#c4ccd3"/><circle cx="698" cy="92" r="3" fill="#c4ccd3"/>
+    </g>
+    <g class="day-only sun">
+      <circle cx="690" cy="84" r="90" fill="url(#sunglow)"/>
+      <g id="sunrays" stroke="#ffd36b" stroke-width="3" stroke-linecap="round" opacity=".85"></g>
+      <circle cx="690" cy="84" r="26" fill="#ffe08a"/>
+    </g>
+    <rect class="sky-dim" x="0" y="0" width="800" height="600" fill="#4a5866"/>
+
+    <!-- parallax city -->
+    <g id="skyline" class="skyline"></g>
+    <!-- street lamps -->
+    <g id="lamps"></g>
+
+    <!-- road -->
+    <rect class="road" x="0" y="500" width="800" height="100"/>
+    <line x1="0" y1="500" x2="800" y2="500" stroke="#2a3138" stroke-width="2"/>
+    <g id="dashes"></g>
+    <ellipse cx="400" cy="501" rx="120" ry="5" fill="#000" opacity=".6"/>
+
+    <!-- ===== RIDER + BIKE ===== -->
+    <g id="rider" class="rider" stroke-linecap="round" stroke-linejoin="round" fill="none">
+      <!-- far leg (behind bike) -->
+      <path id="legFar" stroke="#3b444d" stroke-width="7"/>
+      <path id="footFar" stroke="#3b444d" stroke-width="5"/>
+      <!-- far arm: the free, casual one -->
+      <path id="armFree" stroke="#9aa4ad" stroke-width="6"/>
+
+      <!-- wheels -->
+      <g id="wheelR" transform="translate(320 452)">
+        <circle r="46" stroke="#e8ecef" stroke-width="3"/>
+        <circle r="40" stroke="#5b6570" stroke-width="1.2"/>
+        <g class="spokes" stroke="#5b6570" stroke-width="1"></g>
+        <circle r="4" stroke="#19e3f2" stroke-width="2"/>
+      </g>
+      <g id="wheelF" transform="translate(480 452)">
+        <circle r="46" stroke="#e8ecef" stroke-width="3"/>
+        <circle r="40" stroke="#5b6570" stroke-width="1.2"/>
+        <g class="spokes" stroke="#5b6570" stroke-width="1"></g>
+        <circle r="4" stroke="#5b6570" stroke-width="2"/>
+      </g>
+
+      <!-- drivetrain -->
+      <circle cx="320" cy="452" r="7" stroke="#19e3f2" stroke-width="2.4" filter="url(#glow)"/>
+      <circle cx="390" cy="456" r="15" stroke="#19e3f2" stroke-width="2.4" filter="url(#glow)"/>
+      <path d="M320 445 L390 441 M320 459 L390 471" stroke="#19e3f2" stroke-width="1.4" opacity=".8"/>
+
+      <!-- frame -->
+      <g stroke="#1ef58f" stroke-width="3.2" filter="url(#glow)">
+        <path d="M390 456 L375 378"/>             <!-- seat tube -->
+        <path d="M377 388 L462 384"/>             <!-- top tube -->
+        <path d="M390 456 L468 402"/>             <!-- down tube -->
+        <path d="M462 380 L468 402"/>             <!-- head tube -->
+        <path d="M378 392 L320 452"/>             <!-- seat stay -->
+        <path d="M390 456 L320 452"/>             <!-- chain stay -->
+      </g>
+      <path d="M468 402 L480 452" stroke="#e8ecef" stroke-width="3"/> <!-- fork -->
+      <path d="M462 380 L468 370 Q474 360 492 361" stroke="#e8ecef" stroke-width="3"/> <!-- stem + riser bar -->
+      <path d="M375 378 L374 370" stroke="#e8ecef" stroke-width="3"/>
+      <path d="M356 369 Q372 364 392 368" stroke="#e8ecef" stroke-width="4"/> <!-- saddle -->
+
+      <!-- crank arm + near pedal -->
+      <path id="crank" stroke="#e8ecef" stroke-width="3"/>
+
+      <!-- torso / head -->
+      <g id="upper">
+        <path d="M374 364 Q384 330 408 300" stroke="#e8ecef" stroke-width="9"/>
+        <path d="M372 366 Q386 334 410 306" stroke="#0f1215" stroke-width="2" opacity=".6"/>
+        <circle cx="421" cy="279" r="12" stroke="#e8ecef" stroke-width="3" fill="#0f1215"/>
+        <path d="M409 275 Q414 262 428 264 Q434 266 433 272 L446 273" stroke="#1ef58f" stroke-width="3"/> <!-- cap -->
+        <path d="M430 283 L433 283" stroke="#e8ecef" stroke-width="2"/>
+      </g>
+      <!-- near leg -->
+      <path id="legNear" stroke="#c9d1d8" stroke-width="8"/>
+      <path id="footNear" stroke="#e8ecef" stroke-width="5"/>
+      <!-- near arm: the one on the bar -->
+      <path id="armBar" d="M408 302 L440 332 L486 362" stroke="#e8ecef" stroke-width="6"/>
+    </g>
+
+    <!-- ===== NIGHT FURY ===== -->
+    <g id="dragon" filter="url(#glow)" stroke-linecap="round" stroke-linejoin="round">
+      <g id="dbody">
+        <g id="wingFar2" class="day-only"><g transform="translate(-44 6) scale(1.2 1.25)">
+          <path d="M0 -6 C8 -40 5 -70 -10 -85 L-30 -130 Q-55 -100 -70 -95 Q-62 -70 -90 -62 Q-75 -40 -95 -28 Q-72 -18 -70 -4 Z" fill="#07080a" class="sa" stroke-width="2" opacity=".45"/>
+        </g></g>
+        <!-- far wing -->
+        <g id="wingFar" opacity=".45"><g transform="scale(1.5 1.55)">
+          <path d="M8 -10 C16 -44 13 -74 -2 -89 L-22 -134 Q-47 -104 -62 -99 Q-54 -74 -82 -66 Q-67 -44 -87 -32 Q-64 -22 -62 -8 Z"
+                fill="#07080a" class="sa" stroke-width="2"/>
+        </g></g>
+        <!-- tail -->
+        <path d="M-120 14 C-160 22 -200 28 -240 27 C-255 26 -266 24 -276 22"
+              fill="none" class="sa" stroke-width="2.6"/>
+        <path d="M-196 28 L-210 16 L-207 29 Z" fill="#07080a" class="sa" stroke-width="2"/>
+        <path d="M-266 23 L-292 6 L-283 23 Z" fill="#07080a" class="sa" stroke-width="2"/>
+        <path d="M-266 23 L-294 40 L-283 23 Z" fill="#07080a" stroke="#ff4d5e" stroke-width="2"/> <!-- the red tail-fin -->
+        <g class="day-only"><path d="M-262 23 L-286 -10 L-276 21 Z" fill="#07080a" class="sb" stroke-width="2"/><path d="M-262 24 L-288 56 L-276 26 Z" fill="#07080a" class="sb" stroke-width="2"/></g>
+        <!-- body -->
+        <path d="M-120 12 C-90 -8 -20 -14 30 -6 C48 -3 60 2 66 6 C50 22 -40 28 -120 18 Z"
+              fill="#07080a" class="sa" stroke-width="2.6"/>
+        <path d="M-100 8 L-94 0 L-88 6 M-70 3 L-64 -5 L-58 2 M-40 -1 L-34 -9 L-28 -2 M-10 -4 L-4 -11 L2 -4"
+              fill="none" class="sb" stroke-width="1.8"/>
+        <!-- tucked legs -->
+        <path d="M18 12 L26 26 L38 27 M-82 20 L-76 34 L-62 36" fill="none" class="sa" stroke-width="2.2"/>
+        <!-- head -->
+        <g id="head">
+          <g class="day-only">
+            <path d="M88 -18 L64 -68 L96 -21 Z" fill="#07080a" class="sb" stroke-width="2"/>
+            <path d="M84 -14 L46 -54 L91 -18 Z" fill="#07080a" class="sb" stroke-width="2"/>
+            <path d="M80 -8 L34 -32 L85 -12 Z" fill="#07080a" class="sb" stroke-width="2"/>
+            <path d="M78 -1 L30 -6 L81 -5 Z" fill="#07080a" class="sb" stroke-width="2"/>
+            <path d="M78 5 L38 22 L80 1 Z" fill="#07080a" class="sb" stroke-width="2"/>
+            <path d="M101 -21 L100 -74 L108 -22 Z" fill="#07080a" class="sb" stroke-width="2"/>
+          </g>
+          <path d="M92 -18 C80 -36 64 -44 50 -44 C62 -34 70 -26 76 -16" fill="#07080a" class="sb" stroke-width="2"/>
+          <path d="M100 -20 C96 -40 86 -52 72 -58 C80 -44 84 -32 86 -20" fill="#07080a" class="sb" stroke-width="2"/>
+          <path d="M60 4 C66 -12 82 -22 102 -22 C122 -22 136 -14 144 -4 C136 6 118 10 100 10 C84 10 70 9 60 4 Z"
+                fill="#07080a" class="sa" stroke-width="2.6"/>
+          <path id="mouth" d="M120 3 Q132 3 142 -2" fill="none" class="sa" stroke-width="1.8"/>
+          <circle cx="137" cy="-8" r="1.3" class="fa"/>
+          <g id="eye">
+            <path d="M102 -10 Q112 -18 122 -10 Q112 -4 102 -10 Z" fill="#0d3b22" stroke="#1ef58f" stroke-width="1.8"/>
+            <ellipse id="pupil" cx="112" cy="-10.5" rx="1.3" ry="4.2" fill="#020302"/>
+          </g>
+        </g>
+        <g id="wingNear2" class="day-only"><g transform="translate(-40 4) scale(1.25 1.3)">
+          <path d="M0 -6 C8 -40 5 -70 -10 -85 L-30 -130 Q-55 -100 -70 -95 Q-62 -70 -90 -62 Q-75 -40 -95 -28 Q-72 -18 -70 -4 Z" fill="#07080a" class="sa" stroke-width="2.4"/>
+          <path d="M-10 -85 L-70 -95 M-10 -85 L-90 -62 M-10 -85 L-95 -28" fill="none" class="sa" stroke-width="1.1" opacity=".6"/>
+        </g></g>
+        <!-- near wing -->
+        <g id="wingNear"><g transform="scale(1.5 1.55)">
+          <path d="M0 -6 C8 -40 5 -70 -10 -85 L-30 -130 Q-55 -100 -70 -95 Q-62 -70 -90 -62 Q-75 -40 -95 -28 Q-72 -18 -70 -4 Z"
+                fill="#07080a" class="sa" stroke-width="2.6"/>
+          <path d="M-10 -85 L-70 -95 M-10 -85 L-90 -62 M-10 -85 L-95 -28" fill="none" class="sa" stroke-width="1.2" opacity=".6"/>
+        </g></g>
+      </g>
+    </g>
+
+    <g id="rain" class="rain-only" stroke="#b9d4e6" stroke-width="1.3" stroke-linecap="round" stroke-opacity=".7"></g>
+    <g id="fx"></g>
+  </svg>
+
+  <div class="bottom">
+    <span>One gear // One hand // No brakes</span>
+    <span class="hint">move — <em>he's watching</em> · click to fire</span>
+    <span>NF-01</span>
+  </div>
+</div>
+
+<script>
+(() => {
+  const NS = "http://www.w3.org/2000/svg";
+  const $ = id => document.getElementById(id);
+  const svg = $("scene");
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const el = (tag, attrs, parent) => {
+    const n = document.createElementNS(NS, tag);
+    for (const k in attrs) n.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(n);
+    return n;
+  };
+
+  // ---------- static set dressing ----------
+  let seed = 7;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+
+  const stars = [];
+  for (let i = 0; i < 70; i++) {
+    stars.push(el("circle", { cx: rnd() * 800, cy: rnd() * 300, r: rnd() * 1.2 + .3,
+      fill: "#e8ecef", opacity: rnd() * .6 + .2 }, $("stars")));
+  }
+
+  // skyline: two copies of an 800px strip so it tiles
+  const sky = $("skyline");
+  const strip = [];
+  for (let x = 0; x < 800;) {
+    const w = 34 + rnd() * 50, h = 50 + rnd() * 130;
+    strip.push([x, w, h]); x += w + 4 + rnd() * 10;
+  }
+  const win = el("g", { class: "night-only" }, null);
+  for (const off of [0, 800]) {
+    for (const [x, w, h] of strip) {
+      el("rect", { x: x + off, y: 500 - h, width: w, height: h, class: "bld" }, sky);
+      for (let wy = 500 - h + 10; wy < 490; wy += 14)
+        for (let wx = x + 6; wx < x + w - 6; wx += 10)
+          if (rnd() < .16) el("rect", { x: wx + off, y: wy, width: 4, height: 5,
+            fill: rnd() < .5 ? "#1ef58f" : "#e8ecef", opacity: .35 }, win);
+    }
+  }
+
+  // street lamps every 260px
+  sky.appendChild(win);
+
+  const lamps = $("lamps");
+  const lampLit = el("g", { class: "night-only" }, null);
+  for (let x = 60; x < 1100; x += 260) {
+    el("path", { d: `M${x} 500 L${x} 336 Q${x} 326 ${x + 14} 326 L${x + 30} 326`,
+      stroke: "#2a3138", "stroke-width": 3, fill: "none" }, lamps);
+    el("path", { d: `M${x + 22} 330 L${x - 20} 500 L${x + 80} 500 Z`, fill: "url(#cone)" }, lampLit);
+    el("rect", { x: x + 20, y: 324, width: 16, height: 5, rx: 2, fill: "#1ef58f", filter: "url(#glow)" }, lampLit);
+  }
+
+  // road dashes
+  lamps.appendChild(lampLit);
+
+  // sun rays
+  for (let a = 0; a < 360; a += 30) {
+    const r = a * Math.PI / 180;
+    el("line", { x1: 690 + 36 * Math.cos(r), y1: 84 + 36 * Math.sin(r), x2: 690 + 50 * Math.cos(r), y2: 84 + 50 * Math.sin(r) }, $("sunrays"));
+  }
+
+  // rain
+  const drops = [];
+  for (let i = 0; i < 110; i++) {
+    const d = { x: rnd() * 860, y: rnd() * 600, len: 10 + rnd() * 14, v: 620 + rnd() * 260 };
+    d.el = el("line", {}, $("rain"));
+    drops.push(d);
+  }
+  const drawRain = () => drops.forEach(d => {
+    d.el.setAttribute("x1", d.x.toFixed(1)); d.el.setAttribute("y1", d.y.toFixed(1));
+    d.el.setAttribute("x2", (d.x - d.len * .3).toFixed(1)); d.el.setAttribute("y2", (d.y + d.len).toFixed(1));
+  });
+  drawRain();
+
+  // day / night / rain — Stormcutter x Night Fury by day, pure Night Fury by night
+  let mode = "night", raining = false;
+  const setMode = (m, r) => {
+    mode = m === "day" ? "day" : "night"; raining = !!r;
+    svg.classList.toggle("day", mode === "day");
+    svg.classList.toggle("rain", raining);
+  };
+  svg.__nfSet = setMode;
+  { const h = new Date().getHours(); setMode(h >= 6 && h < 18 ? "day" : "night", false); }
+
+  const dashes = $("dashes");
+  for (let x = 0; x < 900; x += 80)
+    el("rect", { x, y: 546, width: 40, height: 3, fill: "#2a3138" }, dashes);
+
+  // wheel spokes
+  document.querySelectorAll(".spokes").forEach(g => {
+    for (let a = 0; a < 180; a += 30) {
+      const r = a * Math.PI / 180;
+      el("line", { x1: -40 * Math.cos(r), y1: -40 * Math.sin(r), x2: 40 * Math.cos(r), y2: 40 * Math.sin(r) }, g);
+    }
+  });
+
+  // ---------- speedometer: 1 -> 43.46, fast start, slow finish ----------
+  const TARGET = 43.46, DUR = 7000;
+  // cubic-bezier(0.3, 0.9, 0.4, 1) — same curve as the live site
+  const bez = (p1x, p1y, p2x, p2y) => {
+    const cx = 3 * p1x, bx = 3 * (p2x - p1x) - cx, ax = 1 - cx - bx;
+    const cy = 3 * p1y, by = 3 * (p2y - p1y) - cy, ay = 1 - cy - by;
+    const sx = t => ((ax * t + bx) * t + cx) * t, sy = t => ((ay * t + by) * t + cy) * t;
+    const dx = t => (3 * ax * t + 2 * bx) * t + cx;
+    return x => { let t = x; for (let i = 0; i < 8; i++) { const d = dx(t); if (Math.abs(d) < 1e-6) break; t -= (sx(t) - x) / d; } return sy(Math.min(1, Math.max(0, t))); };
+  };
+  const ease = bez(.3, .9, .4, 1);
+  const spd = $("spd");
+  const fmt = v => v.toFixed(2).padStart(5, "0");
+
+  // ---------- pointer ----------
+  let mouse = null;
+  const toSvg = e => {
+    const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY;
+    return p.matrixTransform(svg.getScreenCTM().inverse());
+  };
+  svg.addEventListener("pointermove", e => { mouse = toSvg(e); });
+  svg.addEventListener("pointerleave", () => { mouse = null; });
+
+  // ---------- dragon state ----------
+  const S = 1.05;              // dragon scale
+  let DX = 430, DY = 160, headAng = 0, recoil = 0;
+  let pupilRx = 1.3, pupilX = 0, pupilY = 0, nextBlink = 2500, blinkT = -1;
+  const blasts = [];
+  const fx = $("fx");
+
+  const fire = (tx, ty) => {
+    const mx = DX + S * 146, my = DY + S * -2;
+    const ang = Math.atan2(ty - my, tx - mx);
+    const dist = Math.max(60, Math.hypot(tx - mx, ty - my));
+    const g = el("g", {}, fx);
+    const hot = mode === "day", col = hot ? "#ff8a2c" : "#a45cff";
+    const trail = el("line", { stroke: col, "stroke-width": 5, "stroke-linecap": "round", opacity: .5, filter: "url(#bigglow)" }, g);
+    const ball = el("circle", { r: 9, fill: hot ? "url(#fire)" : "url(#plasma)", filter: "url(#bigglow)" }, g);
+    blasts.push({ g, ball, trail, x: mx, y: my, sx: mx, sy: my, vx: Math.cos(ang), vy: Math.sin(ang), dist, t: 0, boom: -1, col, hot });
+    recoil = 1;
+    waveT = 0;                 // the rider looks up and waves
+  };
+  svg.addEventListener("pointerdown", e => { const p = toSvg(e); if (!reduced) fire(p.x, p.y); });
+
+  // ---------- rider state ----------
+  const HIP = [372, 364], BB = [390, 456], CR = 20, L1 = 63, L2 = 62;
+  let waveT = -1, nextWave = 9000;
+  const knee = (hip, foot) => {
+    const dx = foot[0] - hip[0], dy = foot[1] - hip[1];
+    let d = Math.hypot(dx, dy); d = Math.min(d, L1 + L2 - .01);
+    const a = (L1 * L1 - L2 * L2 + d * d) / (2 * d), h = Math.sqrt(Math.max(0, L1 * L1 - a * a));
+    const ux = dx / d, uy = dy / d;
+    const mx = hip[0] + a * ux, my = hip[1] + a * uy;
+    const k1 = [mx - h * uy, my + h * ux], k2 = [mx + h * uy, my - h * ux];
+    return k1[0] > k2[0] ? k1 : k2;           // knee points forward
+  };
+  const leg = (angle, legEl, footEl) => {
+    const p = [BB[0] + CR * Math.cos(angle), BB[1] + CR * Math.sin(angle)];
+    const k = knee(HIP, p);
+    legEl.setAttribute("d", `M${HIP[0]} ${HIP[1]} L${k[0].toFixed(1)} ${k[1].toFixed(1)} L${p[0].toFixed(1)} ${p[1].toFixed(1)}`);
+    footEl.setAttribute("d", `M${(p[0] - 5).toFixed(1)} ${p[1].toFixed(1)} L${(p[0] + 13).toFixed(1)} ${(p[1] + 1).toFixed(1)}`);
+    return p;
+  };
+  const lerp = (a, b, t) => a + (b - a) * t;
+
+  // ---------- main loop ----------
+  let start = null, last = null, world = 0;
+  const frame = ts => {
+    if (start === null) { start = last = ts; }
+    const dt = Math.min(.05, (ts - last) / 1000), el_ms = ts - start; last = ts;
+
+    // speed ramps 1 -> 43.46 and the world moves with it
+    const p = Math.min(1, el_ms / DUR);
+    const kmh = p < 1 ? 1 + (TARGET - 1) * ease(p) : TARGET;
+    spd.textContent = fmt(kmh);
+    world += kmh * 4.6 * dt;
+
+    $("dashes").setAttribute("transform", `translate(${-(world % 80)} 0)`);
+    $("lamps").setAttribute("transform", `translate(${-(world % 260)} 0)`);
+    $("skyline").setAttribute("transform", `translate(${-((world * .3) % 800)} 0)`);
+    const wheelDeg = (world / 46) * 180 / Math.PI;
+    document.querySelectorAll(".spokes").forEach(g => g.setAttribute("transform", `rotate(${wheelDeg % 360})`));
+
+    // pedalling (single speed ~2.8:1)
+    const crank = (world / 46) / 2.8;
+    const pn = leg(crank, $("legNear"), $("footNear"));
+    leg(crank + Math.PI, $("legFar"), $("footFar"));
+    const pf = [BB[0] - CR * Math.cos(crank), BB[1] - CR * Math.sin(crank)];
+    $("crank").setAttribute("d", `M${pf[0].toFixed(1)} ${pf[1].toFixed(1)} L${pn[0].toFixed(1)} ${pn[1].toFixed(1)}`);
+    const bob = Math.sin(crank * 2) * .8;
+    $("upper").setAttribute("transform", `translate(0 ${bob.toFixed(2)})`);
+
+    // the free hand: rests on the thigh, waves up at the dragon now and then
+    if (waveT < 0 && el_ms > nextWave) { waveT = 0; nextWave = el_ms + 11000 + Math.random() * 6000; }
+    let w = 0;
+    if (waveT >= 0) { waveT += dt; w = Math.sin(Math.min(1, waveT / 1.8) * Math.PI); if (waveT > 1.8) waveT = -1; }
+    const wig = Math.sin(el_ms / 90) * 8 * w;
+    const sh = [404, 303 + bob];
+    const elb = [lerp(400, 426, w), lerp(338, 270, w)];
+    const hand = [lerp(392, 432 + wig, w), lerp(364, 236, w)];
+    $("armFree").setAttribute("d", `M${sh[0]} ${sh[1].toFixed(1)} L${elb[0].toFixed(1)} ${elb[1].toFixed(1)} L${hand[0].toFixed(1)} ${hand[1].toFixed(1)}`);
+    $("armBar").setAttribute("d", `M408 ${(302 + bob).toFixed(1)} L440 332 L486 362`);
+
+    // dragon: flap, bob, lazy drift
+    const t = el_ms / 1000;
+    const flap = t * 2 * Math.PI * 1.05;
+    const wingS = .3 + .7 * Math.cos(flap);                       // 1 -> -0.4
+    const lift = -7 * Math.sin(flap);
+    DX = 430 + 35 * Math.sin(t * .33);
+    DY = 150 + 10 * Math.sin(t * .71) + lift;
+    $("wingNear").setAttribute("transform", `translate(0 -6) scale(1 ${wingS.toFixed(3)}) translate(0 6)`);
+    $("wingFar").setAttribute("transform", `translate(0 -8) scale(1 ${(wingS * .92).toFixed(3)}) translate(0 8)`);
+    // Stormcutter's second pair beats a quarter-cycle behind the first
+    const wingS2 = .3 + .7 * Math.cos(flap - Math.PI / 2);
+    $("wingNear2").setAttribute("transform", `translate(0 -2) scale(1 ${wingS2.toFixed(3)}) translate(0 2)`);
+    $("wingFar2").setAttribute("transform", `translate(0 -2) scale(1 ${(wingS2 * .92).toFixed(3)}) translate(0 2)`);
+    recoil = Math.max(0, recoil - dt * 3);
+    const tilt = Math.sin(t * .33 + 1.2) * 3 - recoil * 6;
+    $("dragon").setAttribute("transform", `translate(${(DX - recoil * 10).toFixed(1)} ${DY.toFixed(1)}) scale(${S}) rotate(${tilt.toFixed(2)})`);
+
+    // head + eye follow the pointer; the pupil goes round when you're close
+    const ex = DX + S * 112, ey = DY + S * -10;
+    let targetAng = 0, tpx = 0, tpy = 0, targetRx = 1.3;
+    if (mouse) {
+      const dx = mouse.x - ex, dy = mouse.y - ey, d = Math.hypot(dx, dy);
+      targetAng = Math.max(-22, Math.min(22, Math.atan2(dy, Math.max(Math.abs(dx), 50)) * 180 / Math.PI));
+      const m = Math.min(1, d / 60);
+      tpx = (dx / (d || 1)) * 3.2 * m; tpy = (dy / (d || 1)) * 1.8 * m;
+      targetRx = d < 170 ? 3.4 : 1.3;
+    } else {
+      targetAng = Math.sin(t * .8) * 6;                          // idle: glancing around
+      tpx = Math.sin(t * .6) * 2;
+    }
+    headAng = lerp(headAng, targetAng + recoil * -10, Math.min(1, dt * 6));
+    pupilX = lerp(pupilX, tpx, Math.min(1, dt * 10));
+    pupilY = lerp(pupilY, tpy, Math.min(1, dt * 10));
+    pupilRx = lerp(pupilRx, targetRx, Math.min(1, dt * 5));
+    $("head").setAttribute("transform", `rotate(${headAng.toFixed(2)} 62 0)`);
+    const pupil = $("pupil");
+    pupil.setAttribute("cx", (112 + pupilX).toFixed(2));
+    pupil.setAttribute("cy", (-10.5 + pupilY).toFixed(2));
+    pupil.setAttribute("rx", pupilRx.toFixed(2));
+
+    // blink
+    if (blinkT < 0 && el_ms > nextBlink) { blinkT = 0; nextBlink = el_ms + 2500 + Math.random() * 3500; }
+    let eyeS = 1;
+    if (blinkT >= 0) { blinkT += dt; eyeS = Math.abs(Math.cos(Math.min(1, blinkT / .18) * Math.PI)); if (blinkT > .18) blinkT = -1; }
+    $("eye").setAttribute("transform", `translate(0 -10) scale(1 ${Math.max(.08, eyeS).toFixed(2)}) translate(0 10)`);
+
+    // plasma blasts
+    for (let i = blasts.length - 1; i >= 0; i--) {
+      const b = blasts[i];
+      if (b.boom < 0) {
+        b.t += dt * 900;
+        b.x = b.sx + b.vx * b.t; b.y = b.sy + b.vy * b.t;
+        b.ball.setAttribute("cx", b.x.toFixed(1)); b.ball.setAttribute("cy", b.y.toFixed(1));
+        const tl = Math.min(b.t, 70);
+        b.trail.setAttribute("x1", (b.x - b.vx * tl).toFixed(1)); b.trail.setAttribute("y1", (b.y - b.vy * tl).toFixed(1));
+        b.trail.setAttribute("x2", b.x.toFixed(1)); b.trail.setAttribute("y2", b.y.toFixed(1));
+        if (b.t >= b.dist) {
+          b.boom = 0; b.trail.remove(); b.ball.remove();
+          b.ring = el("circle", { cx: b.x, cy: b.y, r: 4, fill: "none", stroke: b.col, "stroke-width": 4, filter: "url(#bigglow)" }, b.g);
+          b.core = el("circle", { cx: b.x, cy: b.y, r: 14, fill: b.hot ? "url(#fire)" : "url(#plasma)", filter: "url(#bigglow)" }, b.g);
+        }
+      } else {
+        b.boom += dt;
+        const k = b.boom / .55;
+        b.ring.setAttribute("r", (4 + 46 * k).toFixed(1));
+        b.ring.setAttribute("opacity", (1 - k).toFixed(2));
+        b.core.setAttribute("opacity", Math.max(0, 1 - k * 2).toFixed(2));
+        if (k >= 1) { b.g.remove(); blasts.splice(i, 1); }
+      }
+    }
+
+    // rain + sun
+    if (raining) {
+      for (const d of drops) { d.y += d.v * dt; d.x -= d.v * .3 * dt + kmh * 1.2 * dt; if (d.y > 600) { d.y = -30; d.x = Math.random() * 860; } if (d.x < -20) d.x += 860; }
+      drawRain();
+    }
+    if (mode === "day") $("sunrays").setAttribute("transform", `rotate(${(t * 6) % 360} 690 84)`);
+
+    // stars twinkle
+    if (Math.random() < .3) { const s = stars[(Math.random() * stars.length) | 0]; s.setAttribute("opacity", (Math.random() * .7 + .15).toFixed(2)); }
+
+    requestAnimationFrame(frame);
+  };
+
+  if (reduced) {
+    // still frame, final speed shown
+    spd.textContent = fmt(TARGET);
+    leg(0.6, $("legNear"), $("footNear")); leg(0.6 + Math.PI, $("legFar"), $("footFar"));
+    $("armFree").setAttribute("d", "M404 303 L400 338 L392 364");
+    $("dragon").setAttribute("transform", `translate(${DX} ${DY}) scale(${S})`);
+  } else {
+    requestAnimationFrame(frame);
+  }
+})();
+</script>
+<script>
+  var nfMode = "night", nfRain = false, nfSvg = document.getElementById("scene");
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "d") nfMode = nfMode === "day" ? "night" : "day";
+    if (e.key === "r") nfRain = !nfRain;
+    nfSvg.__nfSet(nfMode, nfRain);
+  });
+</script>
+</body>
+</html>
