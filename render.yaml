@@ -2,7 +2,7 @@
 # (run `python _build/patch.py` after changing anything in _build/).
 services:
   - type: web
-    name: nightfury
+    name: aadhicycle
     runtime: static
     buildCommand: echo "prebuilt static site in public/"
     staticPublishPath: ./public
