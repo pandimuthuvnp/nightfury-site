@@ -209,7 +209,7 @@ src, n = re.subn(r'/\*{6}/ \t__webpack_require__\("\./node_modules/webpack-dev-s
 assert n == 1, f"strip dev-server client: {n}"
 src = src.replace("//# sourceMappingURL=bundle.js.map", "")
 
-(ROOT / "static/js/bundle.js").write_text(src, encoding="utf-8")
+(ROOT / "static/js/bundle.js").write_text(src, encoding="utf-8", newline="\n")
 (ROOT / "favicon.svg").write_bytes((B / "favicon.svg").read_bytes())
 
 # ---------------------------------------------------------------- index.html
@@ -232,5 +232,5 @@ src = src.replace("//# sourceMappingURL=bundle.js.map", "")
         <div id="root"></div>
     </body>
 </html>
-""".replace("__BUILD__", str(len(src))), encoding="utf-8")
+""".replace("__BUILD__", str(len(src))), encoding="utf-8", newline="\n")   # LF, so a rebuild matches git byte for byte
 print("patched OK:", len(src), "bytes")
